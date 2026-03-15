@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luminary — Photo Archive</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1c1917;background:#fafaf9;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh;position:relative;overflow:hidden}
+.sidebar{width:215px;min-width:215px;background:#fff;border-right:1px solid #e7e5e4;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+.sidebar-header{padding:18px 16px 14px;border-bottom:1px solid #e7e5e4}
+.logo{font-size:17px;font-weight:700;letter-spacing:-0.03em;color:#1c1917}
+.logo span{color:#a8a29e;font-weight:400}
+.logo-sub{font-size:11px;color:#a8a29e;margin-top:2px}
+.nav-label{padding:14px 16px 4px;font-size:10px;font-weight:600;color:#a8a29e;letter-spacing:.1em;text-transform:uppercase}
+.nav-item{padding:7px 12px;margin:1px 6px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;transition:background .12s;color:#57534e}
+.nav-item:hover{background:#f5f5f4;color:#1c1917}
+.nav-item.active{background:#f5f5f4;color:#1c1917;font-weight:600}
+.nav-count{margin-left:auto;font-size:11px;color:#a8a29e;background:#f5f5f4;padding:1px 6px;border-radius:10px}
+.tag-cloud{padding:4px 10px 10px;display:flex;flex-wrap:wrap;gap:5px}
+.tag-pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:none;line-height:1.6;transition:all .15s}
+.sidebar-footer{margin-top:auto;padding:14px 12px;border-top:1px solid #e7e5e4}
+.btn-upload{width:100%;padding:10px;border-radius:9px;border:none;background:#1c1917;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;letter-spacing:.01em}
+.btn-upload:hover{opacity:.85}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:10px 20px;border-bottom:1px solid #e7e5e4;background:#fff;display:flex;align-items:center;gap:10px}
+.search-wrap{flex:1;position:relative}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:#a8a29e;pointer-events:none}
+.search-input{width:100%;padding:8px 12px 8px 34px;border:1px solid #e7e5e4;border-radius:9px;font-size:13px;color:#1c1917;background:#fafaf9;outline:none;transition:border-color .15s}
+.search-input:focus{border-color:#a8a29e;background:#fff}
+.btn-sm{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;letter-spacing:.01em}
+.btn-primary{border:none;background:#1c1917;color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{border:1px solid #e7e5e4;background:#fff;color:#44403c}
+.btn-secondary:hover{background:#f5f5f4}
+.filter-bar{padding:7px 20px;border-bottom:1px solid #e7e5e4;background:#fff;display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-height:38px}
+.filter-chip{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:5px;background:#eff6ff;color:#1e40af}
+.filter-chip .rm{cursor:pointer;opacity:.6;font-size:14px;line-height:1;transition:opacity .1s}
+.filter-chip .rm:hover{opacity:1}
+.clear-link{font-size:12px;color:#a8a29e;cursor:pointer;text-decoration:underline;margin-left:4px}
+.grid-area{flex:1;overflow-y:auto;padding:20px;background:#fafaf9}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:15px;font-weight:600;color:#1c1917}
+.photo-count{font-size:12px;color:#a8a29e}
+.photo-grid{columns:3;column-gap:14px}
+@media(max-width:960px){.photo-grid{columns:2}}
+@media(max-width:640px){.photo-grid{columns:1}}
+.photo-card{break-inside:avoid;margin-bottom:14px;border-radius:12px;overflow:hidden;background:#fff;border:1px solid #e7e5e4;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s}
+.photo-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08);border-color:#d6d3d1}
+.photo-img{width:100%;display:block;object-fit:cover;background:#f5f5f4;min-height:80px}
+.photo-meta{padding:10px 12px 8px}
+.photo-name{font-size:13px;font-weight:600;color:#1c1917;display:flex;align-items:center;justify-content:space-between}
+.photo-occasion{font-size:11px;color:#78716c;margin-top:2px}
+.photo-tags{margin-top:7px;display:flex;flex-wrap:wrap;gap:4px}
+.fav-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:0;line-height:1;transition:transform .1s}
+.fav-btn:hover{transform:scale(1.2)}
+.empty-state{text-align:center;padding:80px 20px;color:#78716c}
+.empty-icon{font-size:52px;margin-bottom:14px}
+.empty-title{font-size:16px;font-weight:600;color:#44403c}
+.empty-sub{font-size:13px;margin-top:6px;line-height:1.6}
+.detail-panel{width:300px;min-width:300px;background:#fff;border-left:1px solid #e7e5e4;display:flex;flex-direction:column;overflow-y:auto}
+.detail-img-wrap{position:relative}
+.detail-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#f5f5f4}
+.detail-close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .12s}
+.detail-close:hover{background:rgba(0,0,0,.75)}
+.detail-body{padding:16px;flex:1}
+.detail-title{font-size:16px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;justify-content:space-between}
+.detail-sub{font-size:12px;color:#78716c}
+.detail-section{margin-top:18px}
+.detail-section-label{font-size:10px;font-weight:600;color:#a8a29e;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.tag-input-row{display:flex;gap:6px;margin-top:8px}
+.tag-input{flex:1;padding:7px 10px;border:1px solid #e7e5e4;border-radius:7px;font-size:12px;color:#1c1917;background:#fafaf9;outline:none;transition:border-color .15s}
+.tag-input:focus{border-color:#a8a29e}
+.btn-add-tag{padding:7px 13px;border-radius:7px;font-size:12px;font-weight:600;border:none;background:#1c1917;color:#fff;cursor:pointer;white-space:nowrap}
+.tag-rm{cursor:pointer;margin-left:3px;opacity:.5;font-size:12px;transition:opacity .1s}
+.tag-rm:hover{opacity:1}
+.detail-table td{padding:4px 0;font-size:12px}
+.detail-table td:first-child{color:#78716c;padding-right:10px}
+.detail-table td:last-child{text-align:right;color:#1c1917;font-weight:500}
+.detail-actions{display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid #e7e5e4}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px)}
+.modal{background:#fff;border-radius:16px;border:1px solid #e7e5e4;width:480px;max-width:calc(100vw - 32px);max-height:88vh;overflow-y:auto;padding:26px;box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;cursor:pointer;font-size:22px;color:#a8a29e;line-height:1;transition:color .12s}
+.modal-close:hover{color:#1c1917}
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;font-weight:600;color:#57534e;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:9px 12px;border:1px solid #e7e5e4;border-radius:8px;font-size:13px;color:#1c1917;background:#fafaf9;outline:none;transition:border-color .15s;font-family:inherit}
+.form-input:focus{border-color:#a8a29e;background:#fff}
+select.form-input{cursor:pointer}
+.drop-zone{border:2px dashed #e7e5e4;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:18px}
+.drop-zone:hover,.drop-zone.drag-over{border-color:#a8a29e;background:#f5f5f4}
+.drop-zone-icon{font-size:32px;margin-bottom:10px}
+.drop-zone-text{font-size:13px;color:#78716c;line-height:1.5}
+.drop-preview{width:100%;border-radius:10px;margin-bottom:14px;display:block;max-height:240px;object-fit:cover}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #e7e5e4}
+.ai-section{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:18px;background:#fafaf9}
+.ai-card{background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:18px}
+.ai-card-title{font-size:14px;font-weight:700;margin-bottom:4px;color:#1c1917}
+.ai-card-sub{font-size:12px;color:#78716c;margin-bottom:14px;line-height:1.5}
+.ai-photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ai-photo-thumb{aspect-ratio:1;border-radius:9px;overflow:hidden;cursor:pointer;border:2.5px solid transparent;transition:border-color .15s;position:relative}
+.ai-photo-thumb.selected{border-color:#1c1917}
+.ai-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ai-check{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:#1c1917;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.ai-result{background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:16px;font-size:13px;line-height:1.7;color:#1c1917;white-space:pre-wrap}
+.ai-notice{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px;font-size:12px;color:#92400e;margin-top:6px;line-height:1.5}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #e7e5e4;border-top-color:#1c1917;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.avatar{width:24px;height:24px;min-width:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:#eff6ff;color:#1e40af}
+.progress-bar{height:3px;background:#e7e5e4;border-radius:2px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;background:#1c1917;border-radius:2px;transition:width .3s}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ─── Demo seed photos ───────────────────────────────────────────
+const DEMO = [
+  {id:'1',url:'https://picsum.photos/seed/lum1/400/560',name:'Emma',occasion:'Birthday',tags:['family','celebration'],date:'2024-03-15',description:"Emma's 30th birthday party at the garden venue.",favorite:true},
+  {id:'2',url:'https://picsum.photos/seed/lum2/400/320',name:'James',occasion:'Wedding',tags:['formal','family'],date:'2024-06-20',description:'James & Maria wedding ceremony.',favorite:false},
+  {id:'3',url:'https://picsum.photos/seed/lum3/400/480',name:'Sophie',occasion:'Vacation',tags:['travel','beach'],date:'2024-08-10',description:'Greek island holiday — Santorini.',favorite:true},
+  {id:'4',url:'https://picsum.photos/seed/lum4/400/500',name:'Emma',occasion:'Graduation',tags:['academic','celebration'],date:'2024-05-01',description:'University graduation ceremony.',favorite:false},
+  {id:'5',url:'https://picsum.photos/seed/lum5/400/360',name:'Michael',occasion:'Family Gathering',tags:['family','christmas'],date:'2024-12-25',description:'Christmas family dinner.',favorite:false},
+  {id:'6',url:'https://picsum.photos/seed/lum6/400/520',name:'Sophie',occasion:'Birthday',tags:['friends','celebration'],date:'2024-09-15',description:"Sophie's 25th surprise birthday.",favorite:true},
+  {id:'7',url:'https://picsum.photos/seed/lum7/400/440',name:'James',occasion:'Vacation',tags:['travel','mountains'],date:'2024-07-05',description:'Swiss Alps hiking trip.',favorite:false},
+  {id:'8',url:'https://picsum.photos/seed/lum8/400/300',name:'Michael',occasion:'Anniversary',tags:['romantic','couple'],date:'2024-10-12',description:'10th anniversary dinner.',favorite:true},
+];
+
+// ─── Tag colour palette ─────────────────────────────────────────
+const PALETTES=[
+  {bg:'#f0fdf4',color:'#166534'},
+  {bg:'#fff7ed',color:'#9a3412'},
+  {bg:'#eff6ff',color:'#1e40af'},
+  {bg:'#fdf4ff',color:'#7e22ce'},
+  {bg:'#fff1f2',color:'#9f1239'},
+  {bg:'#f0fdfa',color:'#134e4a'},
+  {bg:'#fefce8',color:'#854d0e'},
+  {bg:'#f8fafc',color:'#334155'},
+];
+function tagColor(t){let h=0;for(const c of t)h=c.charCodeAt(0)+((h<<5)-h);return PALETTES[Math.abs(h)%PALETTES.length]}
+function tagPill(t,removable,pid){
+  const {bg,color}=tagColor(t);
+  const rm=removable?`<span class="tag-rm" onclick="event.stopPropagation();removeTag('${pid}','${t}')">×</span>`:'';
+  return `<span class="tag-pill" style="background:${bg};color:${color}">${t}${rm}</span>`;
+}
+function initials(n){return(n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
+
+// ─── State ──────────────────────────────────────────────────────
+let photos=[...DEMO];
+let state={
+  section:'grid',
+  search:'',
+  filterOccasion:null,filterPerson:null,filterTags:[],showFavs:false,
+  detailId:null,
+  showUpload:false,upFile:null,upName:'',upOccasion:'',upTags:'',upDesc:'',upDate:'',dragging:false,
+  uploading:false,uploadProgress:0,
+  apiKey:'',aiSelectedIds:[],aiPrompt:'',aiLoading:false,aiResult:null,aiError:'',
+};
+function setState(u){Object.assign(state,u);render()}
+
+// ─── Filtering ──────────────────────────────────────────────────
+function getFiltered(){
+  return photos.filter(p=>{
+    if(state.showFavs&&!p.favorite)return false;
+    if(state.search){
+      const q=state.search.toLowerCase();
+      if(![p.name,p.occasion,p.description,...(p.tags||[])].some(v=>v?.toLowerCase().includes(q)))return false;
+    }
+    if(state.filterOccasion&&p.occasion!==state.filterOccasion)return false;
+    if(state.filterPerson&&p.name!==state.filterPerson)return false;
+    if(state.filterTags.length&&!state.filterTags.every(t=>p.tags?.includes(t)))return false;
+    return true;
+  });
+}
+
+// ─── Render ─────────────────────────────────────────────────────
+function render(){
+  const occasions=[...new Set(photos.map(p=>p.occasion).filter(Boolean))];
+  const people=[...new Set(photos.map(p=>p.name).filter(Boolean))];
+  const allTags=[...new Set(photos.flatMap(p=>p.tags||[]))];
+  const filtered=getFiltered();
+  const detail=state.detailId?photos.find(p=>p.id===state.detailId):null;
+  const hasFilters=state.filterOccasion||state.filterPerson||state.filterTags.length||state.search||state.showFavs;
+
+  // ── Sidebar ──
+  const sidebarOccasions=occasions.map(o=>`
+    <div class="nav-item${state.filterOccasion===o?' active':''}" onclick="setOccasion('${o}')">
+      <span style="width:8px;height:8px;border-radius:50%;background:#d97706;flex-shrink:0;display:inline-block"></span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${o}</span>
+      <span class="nav-count">${photos.filter(p=>p.occasion===o).length}</span>
+    </div>`).join('');
+
+  const sidebarPeople=people.map(p=>`
+    <div class="nav-item${state.filterPerson===p?' active':''}" onclick="setPerson('${p}')">
+      <div class="avatar">${initials(p)}</div>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${p}</span>
+      <span class="nav-count">${photos.filter(x=>x.name===p).length}</span>
+    </div>`).join('');
+
+  const sidebarTags=allTags.length?`
+    <div class="nav-label">Tags</div>
+    <div class="tag-cloud">${allTags.map(t=>{
+      const {bg,color}=tagColor(t);
+      const active=state.filterTags.includes(t);
+      return`<button class="tag-pill" style="background:${bg};color:${color};outline:${active?`2px solid ${color}`:'none'};outline-offset:1px" onclick="toggleTagFilter('${t}')">${t}</button>`;
+    }).join('')}</div>`:'';
+
+  // ── Filter bar ──
+  const filterBar=hasFilters?`
+    <div class="filter-bar">
+      <span style="font-size:12px;color:#a8a29e">${filtered.length} result${filtered.length!==1?'s':''}</span>
+      ${state.showFavs?`<span class="filter-chip">⭐ Favorites<span class="rm" onclick="setState({showFavs:false,section:'grid'})"> ×</span></span>`:''}
+      ${state.filterOccasion?`<span class="filter-chip">${state.filterOccasion}<span class="rm" onclick="setState({filterOccasion:null})"> ×</span></span>`:''}
+      ${state.filterPerson?`<span class="filter-chip">${state.filterPerson}<span class="rm" onclick="setState({filterPerson:null})"> ×</span></span>`:''}
+      ${state.filterTags.map(t=>`<span class="filter-chip">${t}<span class="rm" onclick="removeTagFilter('${t}')"> ×</span></span>`).join('')}
+      <span class="clear-link" onclick="clearFilters()">Clear all</span>
+    </div>`:'';
+
+  // ── Photo grid ──
+  const gridContent=state.section==='grid'?`
+    <div class="grid-area">
+      <div class="section-header">
+        <span class="section-title">${state.showFavs?'Favorites':state.filterPerson||state.filterOccasion||'All Photos'}</span>
+        <span class="photo-count">${filtered.length} photo${filtered.length!==1?'s':''}</span>
+      </div>
+      ${filtered.length===0?`
+        <div class="empty-state">
+          <div class="empty-icon">📷</div>
+          <div class="empty-title">No photos found</div>
+          <div class="empty-sub">${hasFilters?'Try adjusting your filters or search term':'Click the upload button to add your first photo'}</div>
+        </div>
+      `:`<div class="photo-grid">${filtered.map(p=>`
+        <div class="photo-card" onclick="openDetail('${p.id}')">
+          <img class="photo-img" src="${p.url}" alt="${p.name}" loading="lazy">
+          <div class="photo-meta">
+            <div class="photo-name">
+              <span>${p.name||'Untitled'}</span>
+              <button class="fav-btn" onclick="event.stopPropagation();toggleFav('${p.id}')" title="${p.favorite?'Remove from favorites':'Add to favorites'}">${p.favorite?'★':'☆'}</button>
+            </div>
+            ${p.occasion?`<div class="photo-occasion">${p.occasion}${p.date?' · '+p.date:''}</div>`:''}
+            ${p.tags?.length?`<div class="photo-tags">${p.tags.slice(0,4).map(t=>tagPill(t)).join('')}</div>`:''}
+          </div>
+        </div>`).join('')}</div>`}
+    </div>`:'';
+
+  // ── AI Studio ──
+  const aiSection=state.section==='ai'?`
+    <div class="ai-section">
+      <div class="ai-card">
+        <div class="ai-card-title">✨ AI Studio — Powered by xAI Grok Vision</div>
+        <div class="ai-card-sub">Select photos of a person, add a prompt, and Grok will generate a detailed portrait description you can use with Runway ML or Kling AI to create a realistic video.</div>
+        <div class="ai-notice">
+          ℹ️ <strong>How this works:</strong> Grok analyzes your photos and writes a cinematic description of the person. Paste that output into <a href="https://runwayml.com" target="_blank" style="color:#92400e">Runway ML Gen-3</a> or <a href="https://klingai.com" target="_blank" style="color:#92400e">Kling AI</a> to generate the video. Your API key is used directly from your browser and is never stored.
+        </div>
+      </div>
+
+      <div class="ai-card">
+        <div class="ai-card-title">Step 1 — xAI API Key</div>
+        <div class="ai-card-sub">Get your key at <a href="https://console.x.ai" target="_blank" style="color:#1e40af;font-weight:500">console.x.ai</a> → API Keys</div>
+        <input class="form-input" type="password" placeholder="xai-xxxxxxxxxxxxxxxxxxxx" value="${state.apiKey}" oninput="setState({apiKey:this.value})" style="font-family:monospace;font-size:12px;letter-spacing:.05em">
+      </div>
+
+      <div class="ai-card">
+        <div class="ai-card-title">Step 2 — Select Photos</div>
+        <div class="ai-card-sub">Choose multiple photos of the same person for the best result</div>
+        <div class="ai-photo-grid">${photos.map(p=>`
+          <div class="ai-photo-thumb${state.aiSelectedIds.includes(p.id)?' selected':''}" onclick="toggleAiPhoto('${p.id}')" title="${p.name}">
+            <img src="${p.url}" alt="${p.name}" loading="lazy">
+            ${state.aiSelectedIds.includes(p.id)?`<div class="ai-check">✓</div>`:''}
+          </div>`).join('')}</div>
+        ${state.aiSelectedIds.length?`<p style="font-size:12px;color:#78716c;margin-top:10px">${state.aiSelectedIds.length} photo${state.aiSelectedIds.length!==1?'s':''} selected</p>`:''}
+      </div>
+
+      <div class="ai-card">
+        <div class="ai-card-title">Step 3 — Prompt (optional)</div>
+        <div class="ai-card-sub">Describe what you want, or leave blank for the default portrait analysis</div>
+        <textarea class="form-input" rows="3" placeholder="e.g. Describe this person in vivid detail for generating a cinematic portrait video — their appearance, energy, and how they might naturally move..." oninput="setState({aiPrompt:this.value})" style="resize:vertical;line-height:1.5">${state.aiPrompt}</textarea>
+      </div>
+
+      <div class="ai-card">
+        <button class="btn-sm btn-primary" onclick="runGrok()" ${state.aiLoading?'disabled':''} style="width:100%;padding:12px;font-size:14px">
+          ${state.aiLoading?`<span class="spinner"></span>Analyzing with Grok...`:'✨ Analyze with Grok Vision'}
+        </button>
+        ${state.aiError?`<div style="margin-top:12px;padding:12px;background:#fff1f2;border:1px solid #fecaca;border-radius:9px;font-size:12px;color:#9f1239;line-height:1.5">${state.aiError}</div>`:''}
+        ${state.aiResult?`
+          <div style="margin-top:16px">
+            <div style="font-size:10px;font-weight:700;color:#a8a29e;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Grok's Analysis — ready to use in video tools</div>
+            <div class="ai-result">${state.aiResult}</div>
+            <div style="margin-top:12px;padding:12px;background:#f0fdf4;border-radius:8px;font-size:12px;color:#166534;line-height:1.5">
+              ✅ Copy this description and paste it into <strong>Runway ML Gen-3</strong>, <strong>Kling AI</strong>, or <strong>Pika Labs</strong> as your video generation prompt.
+            </div>
+          </div>`:''}
+      </div>
+    </div>`:'';
+
+  // ── Detail panel ──
+  const detailPanel=detail?`
+    <div class="detail-panel">
+      <div class="detail-img-wrap">
+        <img class="detail-img" src="${detail.url}" alt="${detail.name}">
+        <button class="detail-close" onclick="setState({detailId:null})">×</button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-title">
+          <span>${detail.name||'Untitled'}</span>
+          <button class="fav-btn" onclick="toggleFav('${detail.id}')" style="font-size:20px">${detail.favorite?'★':'☆'}</button>
+        </div>
+        <div class="detail-sub">${[detail.occasion,detail.date].filter(Boolean).join(' · ')}</div>
+        ${detail.description?`<p style="font-size:13px;color:#57534e;margin-top:10px;line-height:1.6">${detail.description}</p>`:''}
+        <div class="detail-section">
+          <div class="detail-section-label">Tags</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;min-height:24px">${(detail.tags||[]).map(t=>tagPill(t,true,detail.id)).join('')}${!detail.tags?.length?`<span style="font-size:12px;color:#a8a29e">No tags yet</span>`:''}</div>
+          <div class="tag-input-row">
+            <input class="tag-input" id="tagInput" placeholder="Add a tag..." onkeydown="if(event.key==='Enter')addTag('${detail.id}')">
+            <button class="btn-add-tag" onclick="addTag('${detail.id}')">Add</button>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-label">Info</div>
+          <table class="detail-table" style="width:100%;border-collapse:collapse">
+            <tr><td>Person</td><td>${detail.name||'—'}</td></tr>
+            <tr><td>Occasion</td><td>${detail.occasion||'—'}</td></tr>
+            <tr><td>Date</td><td>${detail.date||'—'}</td></tr>
+          </table>
+        </div>
+        <div class="detail-actions">
+          <button class="btn-sm btn-secondary" onclick="deletePhoto('${detail.id}')" style="flex:1">🗑 Delete</button>
+          <button class="btn-sm btn-primary" onclick="useInAI('${detail.id}')" style="flex:1">✨ Use in AI</button>
+        </div>
+      </div>
+    </div>`:'';
+
+  // ── Upload modal ──
+  const uploadModal=state.showUpload?`
+    <div class="overlay" onclick="if(event.target===this)closeUpload()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">
+          Add Photo
+          <button class="modal-close" onclick="closeUpload()">×</button>
+        </div>
+        ${state.upFile
+          ?`<img src="${state.upFile}" class="drop-preview" alt="preview">
+             <button class="btn-sm btn-secondary" onclick="setState({upFile:null})" style="margin-bottom:16px;font-size:12px">↩ Change photo</button>`
+          :`<div class="drop-zone${state.dragging?' drag-over':''}" id="dropzone"
+              onclick="document.getElementById('fileInput').click()"
+              ondragover="event.preventDefault();setState({dragging:true})"
+              ondragleave="setState({dragging:false})"
+              ondrop="handleDrop(event)">
+              <div class="drop-zone-icon">📁</div>
+              <div class="drop-zone-text">Drop a photo here or<br><strong style="color:#1c1917">click to browse</strong><br><span style="font-size:11px;color:#a8a29e">JPG · PNG · WEBP · GIF</span></div>
+            </div>`}
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileInput(this)">
+        <div class="form-group">
+          <label class="form-label">Person's Name *</label>
+          <input class="form-input" placeholder="e.g. Emma" value="${state.upName}" oninput="setState({upName:this.value})">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Occasion</label>
+          <select class="form-input" onchange="setState({upOccasion:this.value})">
+            <option value="">Select an occasion...</option>
+            ${['Birthday','Wedding','Vacation','Holiday','Graduation','Family Gathering','Anniversary','Portrait','Other'].map(o=>`<option value="${o}"${state.upOccasion===o?' selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" value="${state.upDate}" oninput="setState({upDate:this.value})">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags <span style="font-weight:400;color:#a8a29e">(comma-separated)</span></label>
+          <input class="form-input" placeholder="family, celebration, portrait" value="${state.upTags}" oninput="setState({upTags:this.value})">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input class="form-input" placeholder="Short description of the photo..." value="${state.upDesc}" oninput="setState({upDesc:this.value})">
+        </div>
+        ${state.uploading?`<div class="progress-bar"><div class="progress-fill" style="width:${state.uploadProgress}%"></div></div>`:''}
+        <div class="modal-actions">
+          <button class="btn-sm btn-secondary" onclick="closeUpload()">Cancel</button>
+          <button class="btn-sm btn-primary" onclick="addPhoto()" ${!state.upFile||state.uploading?'disabled':''}>
+            ${state.uploading?`<span class="spinner"></span>Adding...`:'Add Photo'}
+          </button>
+        </div>
+      </div>
+    </div>`:'';
+
+  // ── Assemble ──
+  document.getElementById('app').innerHTML=`
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">Luminary<span>.</span></div>
+        <div class="logo-sub">Personal Photo Archive</div>
+      </div>
+      <div class="nav-item${state.section==='grid'&&!state.filterOccasion&&!state.filterPerson&&!state.showFavs?' active':''}" onclick="setState({section:'grid',filterOccasion:null,filterPerson:null,filterTags:[],showFavs:false,search:''})">
+        <span>🖼️</span> All Photos <span class="nav-count">${photos.length}</span>
+      </div>
+      <div class="nav-item${state.showFavs?' active':''}" onclick="setState({showFavs:true,section:'grid',filterOccasion:null,filterPerson:null,filterTags:[]})">
+        <span>⭐</span> Favorites <span class="nav-count">${photos.filter(p=>p.favorite).length}</span>
+      </div>
+      <div class="nav-item${state.section==='ai'?' active':''}" onclick="setState({section:'ai',detailId:null})">
+        <span>✨</span> AI Studio
+      </div>
+      ${occasions.length?`<div class="nav-label">Occasions</div>${sidebarOccasions}`:''}
+      ${people.length?`<div class="nav-label">People</div>${sidebarPeople}`:''}
+      ${sidebarTags}
+      <div class="sidebar-footer">
+        <button class="btn-upload" onclick="setState({showUpload:true})">+ Upload Photo</button>
+      </div>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" placeholder="Search by name, occasion, tag, description..." value="${state.search}" oninput="setState({search:this.value,section:'grid'})">
+        </div>
+        <button class="btn-sm btn-primary" onclick="setState({showUpload:true})">+ Upload</button>
+      </div>
+      ${filterBar}
+      ${gridContent}
+      ${aiSection}
+    </div>
+    ${detailPanel}
+    ${uploadModal}
+  `;
+}
+
+// ─── Actions ────────────────────────────────────────────────────
+function setOccasion(o){setState({section:'grid',filterOccasion:state.filterOccasion===o?null:o,filterPerson:null,showFavs:false})}
+function setPerson(p){setState({section:'grid',filterPerson:state.filterPerson===p?null:p,filterOccasion:null,showFavs:false})}
+function toggleTagFilter(t){setState({filterTags:state.filterTags.includes(t)?state.filterTags.filter(x=>x!==t):[...state.filterTags,t],section:'grid',showFavs:false})}
+function removeTagFilter(t){setState({filterTags:state.filterTags.filter(x=>x!==t)})}
+function clearFilters(){setState({filterOccasion:null,filterPerson:null,filterTags:[],search:'',showFavs:false})}
+function openDetail(id){setState({detailId:id})}
+function toggleFav(id){photos=photos.map(p=>p.id===id?{...p,favorite:!p.favorite}:p);render()}
+function deletePhoto(id){if(!confirm('Delete this photo?'))return;photos=photos.filter(p=>p.id!==id);setState({detailId:null})}
+function useInAI(id){const ids=state.aiSelectedIds.includes(id)?state.aiSelectedIds:[...state.aiSelectedIds,id];setState({aiSelectedIds:ids,section:'ai',detailId:null})}
+function toggleAiPhoto(id){setState({aiSelectedIds:state.aiSelectedIds.includes(id)?state.aiSelectedIds.filter(x=>x!==id):[...state.aiSelectedIds,id]})}
+
+function addTag(pid){
+  const el=document.getElementById('tagInput');
+  const tag=el?.value.trim().toLowerCase().replace(/\s+/g,'-');
+  if(!tag)return;
+  photos=photos.map(p=>p.id===pid&&!p.tags.includes(tag)?{...p,tags:[...p.tags,tag]}:p);
+  if(el)el.value='';
+  render();
+}
+function removeTag(pid,tag){photos=photos.map(p=>p.id===pid?{...p,tags:p.tags.filter(t=>t!==tag)}:p);render()}
+
+function closeUpload(){setState({showUpload:false,upFile:null,upName:'',upOccasion:'',upTags:'',upDesc:'',upDate:'',uploading:false,uploadProgress:0})}
+
+function handleDrop(e){
+  e.preventDefault();
+  const f=e.dataTransfer.files[0];
+  if(f?.type.startsWith('image/'))readFile(f);
+  setState({dragging:false});
+}
+function handleFileInput(input){const f=input.files[0];if(f)readFile(f)}
+function readFile(f){
+  const r=new FileReader();
+  r.onload=e=>setState({upFile:e.target.result});
+  r.readAsDataURL(f);
+}
+
+function addPhoto(){
+  if(!state.upFile)return;
+  setState({uploading:true,uploadProgress:30});
+  setTimeout(()=>setState({uploadProgress:70}),300);
+  setTimeout(()=>{
+    const p={
+      id:Date.now().toString(),
+      url:state.upFile,
+      name:state.upName||'Unknown',
+      occasion:state.upOccasion||null,
+      description:state.upDesc||null,
+      date:state.upDate||new Date().toISOString().split('T')[0],
+      tags:state.upTags.split(',').map(t=>t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean),
+      favorite:false,
+    };
+    photos=[p,...photos];
+    closeUpload();
+  },700);
+}
+
+// ─── Grok Vision API ────────────────────────────────────────────
+async function runGrok(){
+  if(!state.apiKey){setState({aiError:'Please enter your xAI API key above.'});return}
+  if(!state.aiSelectedIds.length){setState({aiError:'Please select at least one photo.'});return}
+  setState({aiLoading:true,aiError:'',aiResult:null});
+  const sel=photos.filter(p=>state.aiSelectedIds.includes(p.id));
+  const DEFAULT_PROMPT=`Analyze these photos of the same person and write a vivid, detailed description of their physical appearance: face shape, skin tone, eye color and shape, hair color and style, build, expression, and overall presence. Frame this as a creative brief a video AI could use to generate a realistic portrait video. Be specific and cinematic.`;
+  try{
+    const res=await fetch('https://api.x.ai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${state.apiKey}`},
+      body:JSON.stringify({
+        model:'grok-2-vision-1212',
+        max_tokens:1200,
+        messages:[{role:'user',content:[
+          ...sel.map(p=>({type:'image_url',image_url:{url:p.url}})),
+          {type:'text',text:state.aiPrompt.trim()||DEFAULT_PROMPT}
+        ]}]
+      })
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
+    const text=data.choices?.[0]?.message?.content||'No response received.';
+    setState({aiLoading:false,aiResult:text});
+  }catch(e){
+    setState({aiLoading:false,aiError:`Error: ${e.message}`});
+  }
+}
+
+// ─── Init ────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
