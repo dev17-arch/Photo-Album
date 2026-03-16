@@ -14,9 +14,9 @@ export default async function AILayout({ children }: { children: React.ReactNode
     .from('photos').select('name, occasion, tags, favorite')
     .eq('user_id', userId);
 
-  const occasions = [...new Set(allPhotos.map((p: Photo) => p.occasion).filter(Boolean))];
-  const people    = [...new Set(allPhotos.map((p: Photo) => p.name).filter(Boolean))];
-  const allTags   = [...new Set((allPhotos as Photo[]).flatMap(p => p.tags || []))];
+  const occasions = Array.from(new Set(allPhotos.map((p: Photo) => p.occasion).filter(Boolean)));
+  const people    = Array.from(new Set(allPhotos.map((p: Photo) => p.name).filter(Boolean)));
+  const allTags   = Array.from(new Set((allPhotos as Photo[]).flatMap(p => p.tags || [])));
   const favCount  = allPhotos.filter((p: Photo) => p.favorite).length;
 
   return (

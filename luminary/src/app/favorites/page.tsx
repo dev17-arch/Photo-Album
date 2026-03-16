@@ -21,9 +21,9 @@ export default async function FavoritesPage() {
     .from('photos').select('name, occasion, tags, favorite')
     .eq('user_id', userId);
 
-  const occasions = [...new Set(allPhotos.map((p: Photo) => p.occasion).filter(Boolean))];
-  const people    = [...new Set(allPhotos.map((p: Photo) => p.name).filter(Boolean))];
-  const allTags   = [...new Set((allPhotos as Photo[]).flatMap(p => p.tags || []))];
+  const occasions = Array.from(new Set(allPhotos.map((p: Photo) => p.occasion).filter(Boolean)));
+  const people    = Array.from(new Set(allPhotos.map((p: Photo) => p.name).filter(Boolean)));
+  const allTags   = Array.from(new Set((allPhotos as Photo[]).flatMap(p => p.tags || [])));
   const favCount  = allPhotos.filter((p: Photo) => p.favorite).length;
 
   return (
@@ -35,10 +35,6 @@ export default async function FavoritesPage() {
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar />
         <main className="flex-1 overflow-y-auto p-6 bg-stone-50">
-          <div className="flex items-center justify-between mb-5">
-            <h1 className="text-[15px] font-semibold text-stone-900">⭐ Favorites</h1>
-            <span className="text-[12px] text-stone-400">{photos.length} photo{photos.length !== 1 ? 's' : ''}</span>
-          </div>
           <PhotoGrid photos={photos as Photo[]} />
         </main>
       </div>
